@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+anthropic
+cachetools
+pydantic
+yfinance
+pandas
+numpy
