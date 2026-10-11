@@ -222,7 +222,7 @@ async def chat_stream(req: ChatRequest):
     def generate_stream():
         try:
             with client.messages.stream(
-                model="claude-3-5-haiku-20241022",
+                model="claude-haiku-5-5",
                 max_tokens=1800,
                 system=SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": prompt_content}],
