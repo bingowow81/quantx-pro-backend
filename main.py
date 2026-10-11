@@ -223,7 +223,7 @@ async def chat_stream(req: ChatRequest):
         try:
             with client.messages.stream(
                 model="claude-haiku-5-5",
-                max_tokens=1800,
+                max_tokens=6000,
                 system=SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": prompt_content}],
             ) as stream:
