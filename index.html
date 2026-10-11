@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QUANTX PRO 1.0</title>
+
+<!-- 마크다운 파서 및 Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    background: #060e18;
+    color: #f0f4f8;
+    line-height: 1.6;
+}
+
+header {
+    height: 65px;
+    border-bottom: 1px solid #142336;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6%;
+    background: #081524;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+.logo { font-size: 20px; font-weight: 800; letter-spacing: 1px; }
+.logo span { color: #00e5a0; }
+
+.container { padding: 40px 6%; max-width: 1200px; margin: auto; }
+
+/* 분석 인풋 영역 */
+.search-card {
+    background: #0b1c2e;
+    border: 1px solid #1a2f47;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 30px;
+}
+.search-row { display: flex; gap: 10px; }
+.search-row input {
+    flex: 1;
+    background: #060f1b;
+    border: 1px solid #233b58;
+    color: #fff;
+    padding: 14px 18px;
+    border-radius: 6px;
+    outline: none;
+    font-size: 15px;
+}
+.search-row input:focus { border-color: #00e5a0; }
+.search-row button {
+    padding: 0 30px;
+    border: none;
+    border-radius: 6px;
+    background: #00e5a0;
+    color: #04120e;
+    font-weight: 700;
+    cursor: pointer;
+}
+.search-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 메인 대시보드 결과 영역 */
+.dashboard { display: none; margin-bottom: 40px; }
+.stock-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #1a2f47;
+    padding-bottom: 15px;
+}
+.stock-name { font-size: 26px; font-weight: 800; }
+.score-badge { font-size: 32px; font-weight: 800; color: #00e5a0; }
+
+/* 게이지 바 */
+.gauge-wrapper {
+    background: #081524;
+    padding: 18px;
+    border-radius: 8px;
+    border: 1px solid #142336;
+    margin-bottom: 20px;
+}
+.gauge-bar { width: 100%; height: 10px; background: #1a2e45; border-radius: 5px; overflow: hidden; }
+.gauge-fill { height: 100%; width: 0%; background: #00e5a0; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* 지표 4칸 그리드 */
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.metric-card {
+    background: #091728;
+    border: 1px solid #162a42;
+    padding: 16px;
+    border-radius: 8px;
+}
+.metric-card small { color: #7e91a7; font-size: 12px; }
+.metric-card strong { display: block; font-size: 19px; margin-top: 6px; }
+
+/* 차트 및 백테스트/뉴스 레이아웃 */
+.middle-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+.chart-box, .side-box {
+    background: #091728;
+    border: 1px solid #162a42;
+    padding: 20px;
+    border-radius: 8px;
+}
+.side-box h4 { margin-bottom: 12px; font-size: 14px; color: #00e5a0; }
+.side-box ul { list-style: none; font-size: 13px; color: #b1c1d4; line-height: 1.8; }
+
+/* 채팅 어시스턴트 창 */
+.chat-container {
+    background: #0b1c2e;
+    border: 1px solid #1a2f47;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+.chat-header {
+    background: #0e2238;
+    padding: 15px 20px;
+    font-weight: 700;
+    font-size: 14px;
+    border-bottom: 1px solid #1a2f47;
+}
+.chat-messages { flex: 1; overflow-y: auto; padding: 20px; }
+.message {
+    max-width: 82%;
+    padding: 14px 18px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.7;
+}
+.ai-msg { background: #10243a; border: 1px solid #1b3552; color: #e2ecf7; }
+.ai-msg strong { color: #00e5a0; }
+.user-msg { background: #00e5a0; color: #03130e; margin-left: auto; font-weight: 600; }
+
+.chat-input-bar {
+    display: flex;
+    padding: 15px;
+    background: #081524;
+    border-top: 1px solid #1a2f47;
+    gap: 10px;
+}
+.chat-input-bar input {
+    flex: 1;
+    background: #060f1b;
+    border: 1px solid #233b58;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 6px;
+    outline: none;
+}
+.chat-input-bar button {
+    width: 90px;
+    background: #00e5a0;
+    border: none;
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.chat-input-bar button:disabled { opacity: 0.5; }
+
+@media(max-width: 850px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .middle-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">QUANT<span>X</span> PRO 1.0</div>
+    <div style="font-size: 12px; color: #7e91a7;">CLAUDE 3.5 HAIKU ENGINE</div>
+</header>
+
+<div class="container">
+
+    <!-- 종목 분석 인풋 -->
+    <div class="search-card">
+        <div class="search-row">
+            <input id="stockInput" placeholder="종목명 또는 코드 입력 (예: 005930, AAPL, NVDA, TSLA)" onkeydown="if(event.key==='Enter') analyzeStock()">
+            <button id="searchBtn" onclick="analyzeStock()">정량 진단</button>
+        </div>
+    </div>
+
+    <!-- 대시보드 출력 -->
+    <div class="dashboard" id="dashboard">
+        <div class="stock-header">
+            <div>
+                <div class="stock-name" id="stockName">-</div>
+                <small style="color: #6c8096;" id="stockSymbol">-</small>
+            </div>
+            <div class="score-badge" id="stockScore">-</div>
+        </div>
+
+        <div class="gauge-wrapper">
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:8px;">
+                <span>기관 매력도 스코어</span>
+                <span id="gaugeText">0 / 100</span>
+            </div>
+            <div class="gauge-bar"><div class="gauge-fill" id="gaugeFill"></div></div>
+        </div>
+
+        <div class="grid-4">
+            <div class="metric-card"><small>현재가</small><strong id="mPrice">-</strong></div>
+            <div class="metric-card"><small>당일 등락률</small><strong id="mChange">-</strong></div>
+            <div class="metric-card"><small>RSI (14일)</small><strong id="mRsi">-</strong></div>
+            <div class="metric-card"><small>20일 변동률</small><strong id="m20d">-</strong></div>
+        </div>
+
+        <div class="middle-row">
+            <div class="chart-box">
+                <canvas id="priceChart" height="130"></canvas>
+            </div>
+            <div class="side-box">
+                <h4>2024년 백테스트 (5/20 MA 크로스)</h4>
+                <div style="margin-bottom: 15px; font-size: 13px;">
+                    <div>누적 수익률: <strong id="btReturn" style="color:#00e5a0;">-</strong></div>
+                    <div>최대 낙폭 (MDD): <strong id="btMdd">-</strong></div>
+                    <div>전략 승률: <strong id="btWin">-</strong></div>
+                </div>
+                <h4>최신 뉴스 헤드라인</h4>
+                <ul id="newsList"><li>조회 대기 중</li></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 챗봇 창 -->
+    <div class="chat-container">
+        <div class="chat-header">QUANTX PRO 전용 질의 채널</div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai-msg">
+                시스템이 가동되었습니다. "안녕" 같은 일상 대화부터 "삼성전자 손익비 및 리스크 분석해줘" 같은 정밀 퀀트 분석까지 자유롭게 입력하십시오.
+            </div>
+        </div>
+        <div class="chat-input-bar">
+            <input id="chatInput" placeholder="질의 입력 (종목 진단 후 질문 시 수치 지표가 자동 반영됩니다)" onkeydown="if(event.key==='Enter') sendChat()">
+            <button id="chatBtn" onclick="sendChat()">전송</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// 배포한 본인의 Render 주소로 교체하십시오.
+const API_BASE = "https://quantx-pro-backend.onrender.com"; 
+
+let activeStockContext = "";
+let chartInstance = null;
+let isChatStreaming = false;
+
+async function analyzeStock() {
+    const input = document.getElementById("stockInput");
+    const query = input.value.trim();
+    const btn = document.getElementById("searchBtn");
+    if (!query) return;
+
+    btn.disabled = true;
+    btn.textContent = "연산 중...";
+
+    try {
+        const res = await fetch(`${API_BASE}/api/analyze`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ symbol: query })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "데이터 로드 실패");
+
+        // 1. 대시보드 수치 표기
+        document.getElementById("dashboard").style.display = "block";
+        document.getElementById("stockName").innerText = data.name;
+        document.getElementById("stockSymbol").innerText = data.symbol;
+        document.getElementById("stockScore").innerText = `${data.score}점`;
+        document.getElementById("gaugeText").innerText = `${data.score} / 100`;
+        document.getElementById("gaugeFill").style.width = `${Math.min(data.score, 100)}%`;
+
+        document.getElementById("mPrice").innerText = `${data.current_price.toLocaleString()} ${data.currency}`;
+        document.getElementById("mChange").innerText = `${data.daily_change_pct >= 0 ? "+" : ""}${data.daily_change_pct}%`;
+        document.getElementById("mRsi").innerText = data.rsi;
+        document.getElementById("m20d").innerText = `${data.return_20d >= 0 ? "+" : ""}${data.return_20d}%`;
+
+        // 2. 2024 백테스트 결과
+        document.getElementById("btReturn").innerText = `${data.backtest_2024.total_return}%`;
+        document.getElementById("btMdd").innerText = `-${data.backtest_2024.mdd}%`;
+        document.getElementById("btWin").innerText = `${data.backtest_2024.win_rate}%`;
+
+        // 3. 뉴스 렌더링
+        const newsList = document.getElementById("newsList");
+        newsList.innerHTML = data.news.map(n => `<li>• ${n}</li>`).join("");
+
+        // 4. Chart.js 렌더링
+        renderChart(data.chart_data.labels, data.chart_data.prices);
+
+        // 5. 챗봇 주입용 퀀트 컨텍스트 생성
+        activeStockContext = `종목: ${data.name}(${data.symbol}), 현재가: ${data.current_price}${data.currency}, ` +
+            `20일수익률: ${data.return_20d}%, RSI: ${data.rsi}, 5MA: ${data.ma5}, 20MA: ${data.ma20}, ` +
+            `2024백테스트수익률: ${data.backtest_2024.total_return}%, MDD: ${data.backtest_2024.mdd}%`;
+
+    } catch (err) {
+        alert(`진단 오류: ${err.message}`);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "정량 진단";
+    }
+}
+
+function renderChart(labels, prices) {
+    const ctx = document.getElementById("priceChart").getContext("2d");
+    if (chartInstance) chartInstance.destroy();
+
+    chartInstance = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "30일 종가 추세",
+                data: prices,
+                borderColor: "#00e5a0",
+                backgroundColor: "rgba(0, 229, 160, 0.05)",
+                fill: true,
+                tension: 0.2
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: "#132338" } },
+                y: { grid: { color: "#132338" } }
+            }
+        }
+    });
+}
+
+async function sendChat() {
+    if (isChatStreaming) return; // 연타 방지 락
+    const input = document.getElementById("chatInput");
+    const msg = input.value.trim();
+    const btn = document.getElementById("chatBtn");
+    if (!msg) return;
+
+    // 사용자 메시지 표기
+    addMessage(msg, "user");
+    input.value = "";
+    isChatStreaming = true;
+    btn.disabled = true;
+
+    // AI 스트리밍 박스 생성
+    const container = document.getElementById("chatMessages");
+    const aiDiv = document.createElement("div");
+    aiDiv.className = "message ai-msg";
+    container.appendChild(aiDiv);
+    container.scrollTop = container.scrollHeight;
+
+    let fullText = "";
+
+    try {
+        const response = await fetch(`${API_BASE}/api/chat/stream`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: msg, symbol_context: activeStockContext })
+        });
+
+        if (!response.ok) throw new Error("서버 응답 오류");
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            fullText += decoder.decode(value, { stream: true });
+            aiDiv.innerHTML = marked.parse(fullText);
+            container.scrollTop = container.scrollHeight;
+        }
+    } catch (err) {
+        aiDiv.textContent = `응답 실패: ${err.message}`;
+    } finally {
+        isChatStreaming = false;
+        btn.disabled = false;
+    }
+}
+
+function addMessage(text, type) {
+    const container = document.getElementById("chatMessages");
+    const div = document.createElement("div");
+    div.className = `message ${type}-msg`;
+    div.textContent = text;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+</script>
+
+</body>
+</html>
